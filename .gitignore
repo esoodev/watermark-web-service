@@ -73,4 +73,7 @@ typings/
 .serverless
 
 # Uploaded files
-app/files/uploads/
+app/files/uploads/img/after/*
+!app/files/uploads/img/after/placeholder.txt
+app/files/uploads/img/before/*
+!app/files/uploads/img/before/placeholder.txt
