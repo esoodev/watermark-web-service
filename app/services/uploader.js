@@ -17,9 +17,28 @@ exports.upload = function(req, res, dir) {
   });
 
   form.parse(req, function(err, fields, files) {
-    if (err) {
+    if (!files.filetoupload.name) {
+      res.writeHead(400, { "content-type": "application/json" });
+      res.write(
+        JSON.stringify({
+          status_code: 400,
+          error: "File is not included."
+        })
+      );
       res.end();
-      throw err;
+      return;
+    }
+
+    if (err) {
+      res.writeHead(500, { "content-type": "application/json" });
+      res.write(
+        JSON.stringify({
+          status_code: 500,
+          error: err
+        })
+      );
+      res.end();
+      return;
     }
 
     var oldpath = files.filetoupload.path;
@@ -28,12 +47,28 @@ exports.upload = function(req, res, dir) {
 
     fs.rename(oldpath, newpath, function(err) {
       if (err) {
+        res.writeHead(500, { "content-type": "application/json" });
+        res.write(
+          JSON.stringify({
+            status_code: 500,
+            error: err
+          })
+        );
         res.end();
-        throw JSON.stringify(files.filetoupload);
+        return;
       }
-      res.writeHead(200, { "content-type": "text/plain" });
-      res.write("File uploaded and moved!\n\n");
-      res.end(util.inspect({ fields: fields, files: files }));
+      
+      res.writeHead(200, { "content-type": "application/json" });
+      res.write(
+        JSON.stringify({
+          status_code: 200,
+          message: "File uploaded and moved!",
+          file_name: files.filetoupload.name,
+          inspect: util.inspect({ fields: fields, files: files })
+        })
+      );
+      res.end();
+      return;
     });
   });
 };

@@ -9,7 +9,7 @@ module.exports = function(app) {
   app.post("/upload", (req, res) => {
     console.log(req)
     try {
-      uploader.upload(req, res, __dirname + "/files/img/before")
+      uploader.upload(req, res, __dirname + "/files/uploads/img/before")
     } catch (err) {
       console.log(err)
     }
