@@ -1,0 +1,17 @@
+{
+  "name": "poing-watermark",
+  "version": "1.0.0",
+  "description": "API server for watermarking images.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "soomin.lee@trustus.co.kr",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.3",
+    "formidable": "^1.2.1",
+    "fs": "0.0.1-security"
+  }
+}
