@@ -1,4 +1,9 @@
-const uploader = require("./services/uploader")
+const watermarker = require("./services/watermarker"),
+  multer = require("multer"),
+  upload = multer({
+    dest: __dirname + '/files/uploads/'
+  });
+
 
 module.exports = function (app) {
   app.get("/", (req, res) => {
@@ -6,11 +11,29 @@ module.exports = function (app) {
     res.send("Hello")
   })
 
-  app.post("/upload", (req, res) => {
-    try {
-      uploader.upload(req, res, __dirname + "/files/uploads/img/before", ["image"]);
-    } catch (err) {
-      console.log(err);
+  app.get("/watermark", (req, res) => {
+    watermarker.watermarkLocal(res, __dirname + '/files/uploads/img/before/bear.jpg', __dirname + '/files/watermark/watermark.png', {
+      wmLoc: '0,0',
+      wmSize: '0,0',
+      wmGravity: 'SouthEast'
+    });
+  })
+
+  app.post("/watermark/upload", upload.array('photos', 12), function (req, res, next) {
+    // req.files is array of `photos` files
+    // req.body will contain the text fields, if there were any
+    if (!req.file) {
+      console.log("No file received");
+      return res.send({
+        success: false
+      });
+
+    } else {
+      console.log('file received');
+      return res.send({
+        success: true
+      })
     }
   })
+
 }
