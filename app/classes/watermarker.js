@@ -1,51 +1,107 @@
 const fs = require('fs');
 
-var gm = require('gm');
+var Point = require('./Point');
+
+var Jimp = require('jimp');
 var uniqid = require('uniqid');
-var PNG = require('pngjs').PNG;
+var mime = require('mime-types');
 
+async function watermark(baseImgUri, wmImgUri, options) {
 
-function watermark(baseImgUri, wmImgUri, options) {
+    // Options
+    let wmX = (options && options.wmX) ? options.wmX : 0,
+        wmY = (options && options.wmY) ? options.wmY : 0,
+        opacity = (options && options.opacity) ? options.opacity : .5,
+        gravity = (options && options.gravity) ? options.gravity : 'NorthEast';
+        
+    let resultDest = (options && options.resultDest) ? options.resultDest : false,
+        resultFilename = (options && options.resultFilename) ? options.resultFilename : `${uniqid()}.${mime.extension(Jimp.MIME_PNG)}`;
+        deleteBaseImg = (options && options.deleteBaseImg) ? options.deleteBaseImg : false;
 
-    return new Promise((resolve, reject) => {
-        // Watermark position.
-        let wmLoc = (options && options.wmLoc) ? options.wmLoc : '0,0'
+    try {
+        imgs = await _readImgs(baseImgUri, wmImgUri)
+        baseImg = imgs[0]
+        wmImg = imgs[1]
 
-        // 0,0 for wmSize uses actual image dimensions.
-        let wmSize = (options && options.wmSize) ? options.wmSize : '0,0'
+        // Dimensions and gravity
+        let baseImgDim = new Point(baseImg.bitmap.width, baseImg.bitmap.height),
+            wmImgDim = new Point(wmImg.bitmap.width, wmImg.bitmap.height),
+            displacement = _translateGravity(gravity, baseImgDim, wmImgDim)
 
-        // Watermark gravity : NorthWest, North, NorthEast, West, Center, East, SouthWest, South, or SouthEast
+        let result = await baseImg.composite(wmImg.opacity(opacity), displacement.x + wmX, displacement.y + wmY);
 
-        let wmGravity = (options && options.wmGravity) ? options.wmGravity : 'SouthEast'
-        // Result image format
-        let resImgFormat = (options && options.resImgFormat) ? options.resImgFormat : 'png'
+        if (deleteBaseImg)
+            _deleteFile(baseImgUri);
 
-        // Delete original image
-        let deleteOriginal = (options && options.deleteOriginal) ? options.deleteOriginal : false;
-
-        gm(baseImgUri).
-        gravity(wmGravity).
-        draw([`image Over ${wmLoc} ${wmSize} "` + wmImgUri + '"']).
-        noProfile().
-        toBuffer(resImgFormat, function (err, buffer) {
-            if (err) reject(err);
-
-            if (deleteOriginal) {
-                // Assuming that 'path/file.txt' is a regular file.
-                fs.unlink(baseImgUri, (err) => {
-                    if (err) reject(err);
-                    console.log(`${baseImgUri} was deleted`);
-                });
+        if (resultDest) {
+            try {
+                result.write(resultDest + resultFilename)
+            } catch (err) {
+                reject(err);
             }
+        }
 
-            resolve({
-                filename: `${uniqid()}.${resImgFormat}`,
-                data: buffer
+        return new Promise((resolve, reject) => {
+            result.getBuffer(Jimp.MIME_PNG, (err, buf) => {
+                if (err) {
+                    console.log(err);
+                    reject(err);
+                }
+
+                resolve({
+                    filename: resultFilename,
+                    data: buf
+                });
             });
         });
-    });
+
+
+    } catch (err) {
+        console.log(err);
+        return (err);
+    }
 
 }
 
+function _translateGravity(gravity, baseImgXY, wmImgXY) {
+
+    let displacement = new Point(0, 0);
+
+    switch (gravity) {
+        case "Center":
+            return baseImgXY.subtractPoint(wmImgXY).scale(.5);
+        case "SouthEast":
+            return baseImgXY.subtractPoint(wmImgXY);
+        case "SouthWest":
+            return baseImgXY.subtractXY(baseImgXY.x, wmImgXY.y);
+        case "NorthEast":
+            return displacement;
+        case "NorthWest":
+            return baseImgXY.subtractXY(wmImgXY.x, baseImgXY.y);
+        default:
+            return displacement;
+    }
+
+}
+
+function _deleteFile(fileLoc) {
+    fs.unlink(fileLoc, (err) => {
+        if (err) console.log(err);
+        else
+            console.log('deleted ' + fileLoc);
+    });
+}
+
+function _readImgs(baseImgUri, wmImgUri) {
+    return new Promise((resolve, reject) => {
+        try {
+            Promise.all([Jimp.read(baseImgUri), Jimp.read(wmImgUri)]).then((imgs) => {
+                resolve(imgs);
+            })
+        } catch (err) {
+            reject(err)
+        }
+    });
+}
 
 module.exports.watermark = watermark;

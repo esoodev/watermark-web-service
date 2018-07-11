@@ -41,11 +41,9 @@ module.exports = function (app) {
     res.sendFile(__dirname + "/upload-single.html");
   });
 
-  app.post('/api/upload/single', upload.single("photo"), function (req, res) {
+  app.post('/api/upload/single', upload.single("background"), function (req, res) {
 
     let file = req.file;
-    // console.log(file);
-
     let watermark = __dirname + '/files/img/watermark-2.png';
 
     if (!file) {
@@ -56,11 +54,13 @@ module.exports = function (app) {
 
     } else {
       watermarkService.watermarkSingle(res, file.path, watermark, {
-        wmLoc: '0,0',
-        wmSize: '0,0',
-        wmGravity: 'SouthEast',
-        resImgFormat: 'png',
-        deleteOriginal: true
+        wmX: -50,
+        wmY: -50,
+        opacity: .80,
+        deleteBaseImg: true,
+        saveResultDest: `${__dirname}/files/uploads/img/after/`,
+        resultFilename: 'result.png',
+        gravity: 'SouthEast'
       });
     }
   })

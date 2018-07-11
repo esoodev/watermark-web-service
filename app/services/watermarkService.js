@@ -1,15 +1,10 @@
-const fs = require('fs');
-
-// var watermarker = require("../classes/watermarker");
-var watermarker = require("../classes/watermarker-jimp");
+var watermarker = require("../classes/watermarker");
 
 async function watermarkSingle(res, baseImgUri, wmImgUri, options) {
 
     try {
-        let watermarkedResult = await watermarker.watermark(baseImgUri, wmImgUri, options);
 
-        console.log(watermarkedResult.filename);
-        
+        watermarkedResult = await watermarker.watermark(baseImgUri, wmImgUri, options);
 
         res.writeHead(200, {
             "Content-Disposition": `filename=${watermarkedResult.filename}`,
