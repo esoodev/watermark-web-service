@@ -13,10 +13,11 @@ async function watermark(baseImgUri, wmImgUri, options) {
         wmY = (options && options.wmY) ? options.wmY : 0,
         opacity = (options && options.opacity) ? options.opacity : .5,
         gravity = (options && options.gravity) ? options.gravity : 'NorthEast';
-        
+
     let resultDest = (options && options.resultDest) ? options.resultDest : false,
-        resultFilename = (options && options.resultFilename) ? options.resultFilename : `${uniqid()}.${mime.extension(Jimp.MIME_PNG)}`;
-        deleteBaseImg = (options && options.deleteBaseImg) ? options.deleteBaseImg : false;
+        resultFilename = (options && options.resultFilename) ? options.resultFilename : `${uniqid()}.${mime.extension(Jimp.MIME_PNG)}`,
+        deleteBaseImg = options.deleteBaseImg,
+        deleteWmImg = options.deleteWmImg;
 
     try {
         imgs = await _readImgs(baseImgUri, wmImgUri)
@@ -33,9 +34,12 @@ async function watermark(baseImgUri, wmImgUri, options) {
         if (deleteBaseImg)
             _deleteFile(baseImgUri);
 
+        if (deleteWmImg)
+            _deleteFile(wmImgUri);
+
         if (resultDest) {
             try {
-                result.write(resultDest + resultFilename)
+                await result.write(resultDest + resultFilename)
             } catch (err) {
                 reject(err);
             }

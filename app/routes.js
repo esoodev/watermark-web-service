@@ -24,9 +24,7 @@ var multer = require("multer"),
       cb(null, uniqid() + '.' + mime.extension(file.mimetype))
     }
   }),
-  upload = multer({
-    storage: diskStorage
-  })
+  memoryStorage = multer.memoryStorage();
 
 module.exports = function (app) {
   app.get("/", (req, res) => {
@@ -35,81 +33,107 @@ module.exports = function (app) {
   })
 
   /*
-  File Upload - Start
+  File Upload Disk - Start
   */
-  app.get('/upload/single', function (req, res) {
-    res.sendFile(__dirname + "/upload-single.html");
+  app.get('/upload/single/disk', function (req, res) {
+    res.sendFile(__dirname + "/upload-single-disk.html");
   });
 
-  app.post('/api/upload/single', upload.single("background"), function (req, res) {
+  var cpUploadDisk = multer({
+    storage: diskStorage
+  }).fields([{
+    name: 'background',
+    maxCount: 1
+  }, {
+    name: 'watermark',
+    maxCount: 1
+  }])
 
-    let file = req.file;
-    let watermark = __dirname + '/files/img/watermark-2.png';
+  app.post('/api/upload/single/disk', cpUploadDisk, function (req, res) {
 
-    if (!file) {
+    let files = req.files;
+
+    if (!files || !files.watermark || !files.background) {
       console.log("No file received");
       return res.send({
         success: false
       });
 
     } else {
-      watermarkService.watermarkSingle(res, file.path, watermark, {
-        wmX: -50,
-        wmY: -50,
-        opacity: .80,
-        deleteBaseImg: true,
-        saveResultDest: `${__dirname}/files/uploads/img/after/`,
-        resultFilename: 'result.png',
-        gravity: 'SouthEast'
+
+      // let background = req.files.background[0].buffer;
+      let background = req.files.background[0].path;
+      let watermark = req.files.watermark[0].path;
+
+      console.log(background);
+      
+
+      watermarkService.watermarkDisk(res, background, watermark, {
+        wmX: Number(req.body.wmX),
+        wmY: Number(req.body.wmY),
+        opacity: Number(req.body.opacity),
+        deleteBaseImg: false,
+        deleteWmImg: false,
+        resultDest: `${__dirname}/files/uploads/img/after/`,
+        resultFilename: req.body.resultFilename,
+        gravity: req.body.gravity
       });
-    }
-  })
-
-
-  app.get('/upload/multiple', function (req, res) {
-    // res.sendFile(__dirname + "/upload-multiple.html");
-    res.setHeader('Content-Type', 'text/html');
-    res.write(`
-    <!DOCTYPE html>
-
-    <html>
-    
-    <head>
-      <title>Multiple file upload.</title>
-    </head>
-    
-    <body>
-      <form id="uploadForm" enctype="multipart/form-data" action="/api/upload/multiple?batchId=${uniqid()}" method="post">
-        <input type="file" name="photos" multiple />
-        <input type="submit" value="Upload Image" name="submit">
-        <input type='text' id='random' name='random'>
-        <br>
-        <span id="status"></span>
-      </form>
-    </body>
-    
-    </html>`);
-    res.end();
-  });
-
-  app.post('/api/upload/multiple', upload.array("photos", 12), function (req, res, cb) {
-
-    let files = req.files;
-
-    if (!files) {
-      console.log("No files received");
-      return res.send({
-        success: false
-      });
-    } else {
-      return res.send({
-        files: files,
-        success: true
-      })
     }
   })
   /*
-  File Upload - End
+  File Upload Disk - End
+  */
+
+  /*
+  File Upload Memory - Start
+  */
+  app.get('/upload/single/memory', function (req, res) {
+    res.sendFile(__dirname + "/upload-single-memory.html");
+  });
+
+  var cpUploadMemory = multer({
+    storage: memoryStorage
+  }).fields([{
+    name: 'background',
+    maxCount: 1
+  }, {
+    name: 'watermark',
+    maxCount: 1
+  }])
+
+  app.post('/api/upload/single/memory', cpUploadMemory, function (req, res) {
+
+    let files = req.files;
+
+    console.log(req.body.gravity);
+    console.log(req.body.wmX);
+    
+
+    if (!files || !files.watermark || !files.background) {
+      console.log("No file received");
+      return res.send({
+        success: false
+      });
+
+    } else {
+
+      let background = req.files.background[0].buffer;
+      let watermark = req.files.watermark[0].buffer;
+
+      watermarkService.watermarkMemory(res, background, watermark, {
+        wmX: Number(req.body.wmX),
+        wmY: Number(req.body.wmY),
+        opacity: Number(req.body.opacity),
+        deleteBaseImg: false,
+        deleteWmImg: false,
+        resultDest: `${__dirname}/files/uploads/img/after/`,
+        resultFilename: req.body.resultFilename,
+        gravity: req.body.gravity
+      });
+    }
+  })
+  /*
+  File Upload Memory - End
   */
 
 }

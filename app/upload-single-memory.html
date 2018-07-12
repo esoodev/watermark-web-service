@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+  <title>Single file upload.</title>
+</head>
+
+<body>
+  <form id="uploadForm" enctype="multipart/form-data" action="/api/upload/single/memory" method="post">
+    Background:
+    <br>
+    <input type="file" name="background" />
+    <br>
+    <br> Watermark:
+    <br>
+    <input type="file" name="watermark" />
+    <br>
+    <br> Watermark Offset X :
+    <input type="number" name="wmX">
+    <br> Watermark Offset Y :
+    <input type="number" name="wmY">
+    <br> Watermark Opacity (0 - 1.0):
+    <input type="range" name="opacity" min="0" max="1" step="0.05">
+    <br>
+    <br> Result File Name :
+    <input type="text" name="resultFilename">
+    <br>
+    <br> Gravity:
+    <br>
+    <input type="radio" name="gravity" value="Center" checked> Center
+    <br>
+    <input type="radio" name="gravity" value="NorthEast"> NorthEast
+    <br>
+    <input type="radio" name="gravity" value="NorthWest"> NorthWest
+    <br>
+    <input type="radio" name="gravity" value="SouthEast"> SouthEast
+    <br>
+    <input type="radio" name="gravity" value="SouthWest"> SouthWest
+    <br>
+    <br>
+    <input type="submit" value="Upload" name="submit">
+    <br>
+  </form>
+</body>
+
+</html>
