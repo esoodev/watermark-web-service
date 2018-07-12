@@ -22,15 +22,10 @@ async function watermarkMemory(res, baseImgUri, wmImgUri, options) {
 async function watermarkDisk(res, baseImgUri, wmImgUri, options) {
 
     try {
-
         watermarkedResult = await watermarker.watermark(baseImgUri, wmImgUri, options);
-        console.log(watermarkedResult);
-        
         res.redirect('/files/uploads/img/after/'+watermarkedResult.filename);
-
     } catch (err) {
         console.log(err);
-
     }
 }
 

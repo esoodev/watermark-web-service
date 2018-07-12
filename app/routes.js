@@ -65,9 +65,6 @@ module.exports = function (app) {
       let background = req.files.background[0].path;
       let watermark = req.files.watermark[0].path;
 
-      console.log(background);
-      
-
       watermarkService.watermarkDisk(res, background, watermark, {
         wmX: Number(req.body.wmX),
         wmY: Number(req.body.wmY),
@@ -104,10 +101,6 @@ module.exports = function (app) {
   app.post('/api/upload/single/memory', cpUploadMemory, function (req, res) {
 
     let files = req.files;
-
-    console.log(req.body.gravity);
-    console.log(req.body.wmX);
-    
 
     if (!files || !files.watermark || !files.background) {
       console.log("No file received");
