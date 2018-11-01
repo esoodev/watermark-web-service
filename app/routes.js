@@ -1,132 +1,132 @@
-const fs = require('fs');
+const fs = require('fs')
 
-var watermarkService = require("./services/watermarkService");
+var watermarkService = require('./services/watermarkService')
 
-var uniqid = require('uniqid');
-var mime = require('mime-types');
-var multer = require("multer"),
-  diskStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
+var uniqid = require('uniqid')
+var mime = require('mime-types')
+var multer = require('multer'),
+    diskStorage = multer.diskStorage({
+        destination: function(req, file, cb) {
+            // Multiple file upload batch identification.
+            let batchId = req.query.batchId
 
-      // Multiple file upload batch identification.
-      let batchId = req.query.batchId;
+            // Create new directory for file upload if batchId exits.
+            let dir = `${__dirname}/files/uploads/temp${
+                batchId ? '/' + batchId : ''
+            }`
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir)
+            }
 
-      // Create new directory for file upload if batchId exits.
-      let dir = `${__dirname}/files/uploads/temp${batchId?'/'+batchId: ''}`;
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir);
-      }
+            cb(null, dir)
+        },
+        filename: function(req, file, cb) {
+            cb(null, uniqid() + '.' + mime.extension(file.mimetype))
+        }
+    }),
+    memoryStorage = multer.memoryStorage()
 
-      cb(null, dir)
+module.exports = function(app) {
+    app.get('/', (req, res) => {
+        // You'll create your note here.
+        // res.send("Hello")
+        res.sendFile(__dirname + '/index.html')
+    })
 
-    },
-    filename: function (req, file, cb) {
-      cb(null, uniqid() + '.' + mime.extension(file.mimetype))
-    }
-  }),
-  memoryStorage = multer.memoryStorage();
+    /*
+    File Upload Disk - Start
+    */
+    app.get('/upload/single/disk', function(req, res) {
+        res.sendFile(__dirname + '/upload-single-disk.html')
+    })
 
-module.exports = function (app) {
-  app.get("/", (req, res) => {
-    // You'll create your note here.
-    res.send("Hello")
-  })
+    var cpUploadDisk = multer({
+        storage: diskStorage
+    }).fields([
+        {
+            name: 'background',
+            maxCount: 1
+        },
+        {
+            name: 'watermark',
+            maxCount: 1
+        }
+    ])
 
-  /*
-  File Upload Disk - Start
-  */
-  app.get('/upload/single/disk', function (req, res) {
-    res.sendFile(__dirname + "/upload-single-disk.html");
-  });
+    app.post('/api/upload/single/disk', cpUploadDisk, function(req, res) {
+        let files = req.files
 
-  var cpUploadDisk = multer({
-    storage: diskStorage
-  }).fields([{
-    name: 'background',
-    maxCount: 1
-  }, {
-    name: 'watermark',
-    maxCount: 1
-  }])
+        if (!files || !files.watermark || !files.background) {
+            console.log('No file received')
+            return res.send({
+                success: false
+            })
+        } else {
+            // let background = req.files.background[0].buffer;
+            let background = req.files.background[0].path
+            let watermark = req.files.watermark[0].path
 
-  app.post('/api/upload/single/disk', cpUploadDisk, function (req, res) {
+            watermarkService.watermarkDisk(res, background, watermark, {
+                wmX: Number(req.body.wmX),
+                wmY: Number(req.body.wmY),
+                opacity: Number(req.body.opacity),
+                deleteBaseImg: false,
+                deleteWmImg: false,
+                resultDest: `${__dirname}/files/uploads/img/after/`,
+                resultFilename: req.body.resultFilename,
+                gravity: req.body.gravity
+            })
+        }
+    })
+    /*
+    File Upload Disk - End
+    */
 
-    let files = req.files;
+    /*
+    File Upload Memory - Start
+    */
+    app.get('/upload/single/memory', function(req, res) {
+        res.sendFile(__dirname + '/upload-single-memory.html')
+    })
 
-    if (!files || !files.watermark || !files.background) {
-      console.log("No file received");
-      return res.send({
-        success: false
-      });
+    var cpUploadMemory = multer({
+        storage: memoryStorage
+    }).fields([
+        {
+            name: 'background',
+            maxCount: 1
+        },
+        {
+            name: 'watermark',
+            maxCount: 1
+        }
+    ])
 
-    } else {
+    app.post('/api/upload/single/memory', cpUploadMemory, function(req, res) {
+        let files = req.files
 
-      // let background = req.files.background[0].buffer;
-      let background = req.files.background[0].path;
-      let watermark = req.files.watermark[0].path;
+        if (!files || !files.watermark || !files.background) {
+            console.log('No file received')
+            return res.send({
+                success: false
+            })
+        } else {
+            let background = req.files.background[0].buffer
+            let watermark = req.files.watermark[0].buffer
 
-      watermarkService.watermarkDisk(res, background, watermark, {
-        wmX: Number(req.body.wmX),
-        wmY: Number(req.body.wmY),
-        opacity: Number(req.body.opacity),
-        deleteBaseImg: false,
-        deleteWmImg: false,
-        resultDest: `${__dirname}/files/uploads/img/after/`,
-        resultFilename: req.body.resultFilename,
-        gravity: req.body.gravity
-      });
-    }
-  })
-  /*
-  File Upload Disk - End
-  */
-
-  /*
-  File Upload Memory - Start
-  */
-  app.get('/upload/single/memory', function (req, res) {
-    res.sendFile(__dirname + "/upload-single-memory.html");
-  });
-
-  var cpUploadMemory = multer({
-    storage: memoryStorage
-  }).fields([{
-    name: 'background',
-    maxCount: 1
-  }, {
-    name: 'watermark',
-    maxCount: 1
-  }])
-
-  app.post('/api/upload/single/memory', cpUploadMemory, function (req, res) {
-
-    let files = req.files;
-
-    if (!files || !files.watermark || !files.background) {
-      console.log("No file received");
-      return res.send({
-        success: false
-      });
-
-    } else {
-
-      let background = req.files.background[0].buffer;
-      let watermark = req.files.watermark[0].buffer;
-
-      watermarkService.watermarkMemory(res, background, watermark, {
-        wmX: Number(req.body.wmX),
-        wmY: Number(req.body.wmY),
-        opacity: Number(req.body.opacity),
-        deleteBaseImg: false,
-        deleteWmImg: false,
-        resultDest: `${__dirname}/files/uploads/img/after/`,
-        resultFilename: req.body.resultFilename,
-        gravity: req.body.gravity
-      });
-    }
-  })
-  /*
-  File Upload Memory - End
-  */
-
+            watermarkService.watermarkMemory(res, background, watermark, {
+                wmX: Number(req.body.wmX),
+                wmY: Number(req.body.wmY),
+                opacity: Number(req.body.opacity),
+                deleteBaseImg: false,
+                deleteWmImg: false,
+                resultDest: `${__dirname}/files/uploads/img/after/`,
+                resultFilename: req.body.resultFilename,
+                gravity: req.body.gravity
+            })
+        }
+    })
+    /*
+    File Upload Memory - End
+    */
 }

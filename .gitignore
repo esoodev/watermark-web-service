@@ -72,7 +72,14 @@ typings/
 # Serverless directories
 .serverless
 
+# VSCode
+.vscode
+
+# Debug
+debug/
+
 # Uploaded files
+app/files/uploads/temp/*
 app/files/uploads/img/after/*
 !app/files/uploads/img/after/placeholder.txt
 app/files/uploads/img/before/*
